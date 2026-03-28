@@ -321,6 +321,13 @@ input[type="range"] {
 .legend-market { background: var(--teal); }
 .legend-pricelabs { background: var(--coral); }
 
+.hero-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 .dual-grid {
   display: grid;
   grid-template-columns: 1fr 1.1fr;
@@ -406,6 +413,95 @@ textarea {
   color: var(--muted);
 }
 
+.appendix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.appendix-card {
+  padding: 22px;
+}
+
+.appendix-card p,
+.appendix-card li {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.appendix-card h3 {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.formula {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.56);
+  font: 0.95rem/1.7 Consolas, "Courier New", monospace;
+  white-space: pre-wrap;
+}
+
+.note-banner {
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(0, 109, 111, 0.14);
+  background: linear-gradient(180deg, rgba(0, 109, 111, 0.1), rgba(0, 109, 111, 0.05));
+  color: var(--muted);
+}
+
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.method-table td,
+.method-table th {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.method-table th {
+  width: 32%;
+}
+
+.numbered {
+  counter-reset: appendix-steps;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.numbered li {
+  position: relative;
+  padding-left: 52px;
+  min-height: 36px;
+}
+
+.numbered li::before {
+  counter-increment: appendix-steps;
+  content: counter(appendix-steps);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--teal), #0f827f);
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -446,7 +542,8 @@ textarea {
 @media (max-width: 1180px) {
   .layout,
   .hero,
-  .dual-grid {
+  .dual-grid,
+  .appendix-grid {
     grid-template-columns: 1fr;
   }
 

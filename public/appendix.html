@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PriceLabs Audit Appendix</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Appendix</p>
+        <h1>How the pricing audit works</h1>
+        <p class="lede">
+          This page explains the methodology behind the dashboard in plain language and mirrors the actual rules implemented in the local audit app.
+        </p>
+        <div class="hero-nav">
+          <a class="chip-link" href="/">Back to dashboard</a>
+          <a class="chip-link" href="https://chatgpt.com/share/69c77a7a-6970-8320-b81b-bb10f728dce4" target="_blank" rel="noreferrer">Shared conversation</a>
+        </div>
+      </div>
+      <div class="hero-badge">
+        <p class="badge-label">Core idea</p>
+        <h2>Compare PriceLabs to a weighted local comp set.</h2>
+        <p>The goal is not to reverse-engineer PriceLabs perfectly. It is to test whether the recommendation looks defensible versus nearby, similar, bookable inventory.</p>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="panel note-banner">
+        The bundled Zalor Beach example is synthetic. The workflow is real, but the sample numbers are only a scaffold until you replace them with actual PriceLabs exports and observed competitor calendar prices.
+      </section>
+
+      <section class="appendix-grid">
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Inputs</p>
+            <h2>What data goes into the audit</h2>
+          </div>
+          <table class="method-table">
+            <tr>
+              <th>`subjectListing`</th>
+              <td>The listing we are judging: bedrooms, guest count, pool, walk time, rating, and notes.</td>
+            </tr>
+            <tr>
+              <th>`pricelabsRates`</th>
+              <td>The nightly prices that PriceLabs recommended for the forward window.</td>
+            </tr>
+            <tr>
+              <th>`comparables`</th>
+              <td>Observed market listings with attributes plus daily prices and availability flags.</td>
+            </tr>
+            <tr>
+              <th>Public PriceLabs pages</th>
+              <td>Scraped only for context. They are not used as benchmark data for the nightly pricing calculations.</td>
+            </tr>
+          </table>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Workflow</p>
+            <h2>High-level sequence</h2>
+          </div>
+          <ol class="numbered">
+            <li>Normalize the subject listing, PriceLabs rate series, and comp calendars into a common date-keyed structure.</li>
+            <li>Filter the comp set using the UI controls: horizon, minimum rating, max walk time, pool strictness, and minimum similarity.</li>
+            <li>Score each surviving comparable for similarity to the subject listing.</li>
+            <li>For each day, compute a weighted market median and band from the available comps.</li>
+            <li>Compare the PriceLabs nightly price against that benchmark and classify the day as `Raise`, `Hold`, or `Lower`.</li>
+            <li>Aggregate daily gaps into summary metrics like median gap, price index, revenue uplift, and confidence.</li>
+          </ol>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Similarity</p>
+            <h2>How comparable matching is scored</h2>
+          </div>
+          <p>The app computes a similarity score for each candidate comp using five components. Those components are weighted, then summed into a single score between `0` and `1`.</p>
+          <div class="formula">bedroomScore  = max(0, 1 - abs(subject.bedrooms - comp.bedrooms) / 3)
+guestScore    = max(0, 1 - abs(subject.maxGuests - comp.maxGuests) / 6)
+distanceScore = max(0, 1 - abs(subject.walkMinutesToBeach - comp.walkMinutesToBeach) / 20)
+ratingScore   = max(0.55, comp.rating / 5)
+poolScore     = 1 when pool setup matches
+                0 when strict pool matching is on and it does not match
+                0.7 when strict pool matching is off and it does not match</div>
+          <div class="formula">similarity =
+  bedroomScore * 0.30 +
+  guestScore   * 0.18 +
+  poolScore    * 0.20 +
+  distanceScore* 0.14 +
+  ratingScore  * 0.18</div>
+          <p>Only comps above the chosen `minimum similarity` threshold make it into the benchmark set.</p>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Benchmark</p>
+            <h2>How the market price is derived</h2>
+          </div>
+          <p>For each date, the app looks at only the comparable listings that:</p>
+          <ul class="insights-list">
+            <li>survive the filtering rules,</li>
+            <li>have a rate for that date, and</li>
+            <li>are marked as `available` on that date.</li>
+          </ul>
+          <p>Each usable comp gets a daily weight based on similarity and rating. The market benchmark is then calculated using weighted quantiles:</p>
+          <div class="formula">dailyWeight = max(0.05, similarity * (0.7 + rating / 10))
+
+marketLow    = weightedQuantile(0.25)
+marketMedian = weightedQuantile(0.50)
+marketHigh   = weightedQuantile(0.75)</div>
+          <p>This produces both a centerline and a plausible market band instead of pretending there is only one correct number.</p>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Decision rules</p>
+            <h2>How the daily recommendation is classified</h2>
+          </div>
+          <div class="formula">gapAmount  = marketMedian - priceLabs
+gapPercent = (gapAmount / marketMedian) * 100
+priceIndex = priceLabs / marketMedian</div>
+          <table class="method-table">
+            <tr>
+              <th>`Raise`</th>
+              <td>When `gapPercent >= 8`. PriceLabs is materially below the market median.</td>
+            </tr>
+            <tr>
+              <th>`Hold`</th>
+              <td>When the daily gap is inside the `-8%` to `+8%` band.</td>
+            </tr>
+            <tr>
+              <th>`Lower`</th>
+              <td>When `gapPercent <= -8`. PriceLabs is materially above the market median.</td>
+            </tr>
+            <tr>
+              <th>`Need more data`</th>
+              <td>When too few usable comps remain for that date after filtering.</td>
+            </tr>
+          </table>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Confidence</p>
+            <h2>How confidence and occupancy proxy are estimated</h2>
+          </div>
+          <p>The confidence score is not a statistical confidence interval. It is a practical quality score driven by comp count and comp quality.</p>
+          <div class="formula">confidence = min(1, (usableComparableCount / 5) * (averageSimilarity + 0.35)) * 100</div>
+          <p>The occupancy proxy comes from availability flags on the comp calendars, not from actual booked revenue data.</p>
+          <div class="formula">marketOccupancyProxy = unavailableComparableDates / coveredComparableDates * 100</div>
+          <p>This gives a quick demand signal, but it should be treated as directional rather than exact.</p>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Summary layer</p>
+            <h2>How the top-line verdict is produced</h2>
+          </div>
+          <p>Once all daily rows are computed, the app rolls them up into a single summary:</p>
+          <ul class="insights-list">
+            <li>`medianPriceLabs` and `medianMarket` are the medians of the daily series.</li>
+            <li>`medianGapPercent` compares those two medians.</li>
+            <li>`opportunityUplift` sums only positive daily gaps, showing modeled upside if underpriced days move to the market median.</li>
+            <li>`downsideRisk` sums only negative daily gaps, showing modeled overpricing exposure.</li>
+          </ul>
+          <table class="method-table">
+            <tr>
+              <th>`Likely underpriced`</th>
+              <td>When the rolled-up median gap is at least `+8%`.</td>
+            </tr>
+            <tr>
+              <th>`Within market band`</th>
+              <td>When the rolled-up median gap stays between `-8%` and `+8%`.</td>
+            </tr>
+            <tr>
+              <th>`Likely overpriced`</th>
+              <td>When the rolled-up median gap is at most `-8%`.</td>
+            </tr>
+          </table>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Limits</p>
+            <h2>What this appendix is not claiming</h2>
+          </div>
+          <ul class="insights-list">
+            <li>The app does not scrape private PriceLabs app APIs or reverse-engineer their internal model.</li>
+            <li>The app does not account for cleaning fees, cancellation rules, host responsiveness, photos, or conversion funnel effects.</li>
+            <li>Seasonality matters only to the extent that it is already visible in the comp-set rates you provide.</li>
+            <li>The bundled sample is illustrative, not investment-grade evidence.</li>
+          </ul>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Real data</p>
+            <h2>How to make the audit meaningful</h2>
+          </div>
+          <ol class="numbered">
+            <li>Export or copy actual `PriceLabs` daily recommendations for the forward window you care about.</li>
+            <li>Capture comparable listing calendars from Airbnb, Vrbo, or your market dashboard workflow.</li>
+            <li>Replace the sample JSON with those real observations in the dashboard editor.</li>
+            <li>Rerun the audit and adjust the controls until the comp set reflects the exact micro-market you trust.</li>
+          </ol>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

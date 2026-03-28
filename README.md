@@ -25,6 +25,12 @@ Then open:
 http://localhost:8787/
 ```
 
+Methodology appendix:
+
+```text
+http://localhost:8787/appendix.html
+```
+
 There is also a helper launcher:
 
 ```text

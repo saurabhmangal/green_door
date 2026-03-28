@@ -522,6 +522,28 @@ textarea {
 .negative { color: var(--coral); }
 .positive { color: var(--success); }
 
+.inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.86rem;
+}
+
+.text-link {
+  color: var(--teal);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.link-divider {
+  color: rgba(19, 42, 40, 0.24);
+}
+
 .chart-svg text {
   font-family: "Aptos", "Trebuchet MS", "Segoe UI", sans-serif;
   fill: rgba(19, 42, 40, 0.58);

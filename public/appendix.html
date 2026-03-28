@@ -49,7 +49,7 @@
             </tr>
             <tr>
               <th>`comparables`</th>
-              <td>Observed market listings with attributes plus daily prices and availability flags.</td>
+              <td>Observed market listings with attributes plus daily prices, availability flags, and optionally a `listingUrl` for the exact OTA page.</td>
             </tr>
             <tr>
               <th>Public PriceLabs pages</th>
@@ -203,10 +203,23 @@ priceIndex = priceLabs / marketMedian</div>
           </div>
           <ol class="numbered">
             <li>Export or copy actual `PriceLabs` daily recommendations for the forward window you care about.</li>
-            <li>Capture comparable listing calendars from Airbnb, Vrbo, or your market dashboard workflow.</li>
+            <li>Capture comparable listing calendars from Airbnb, Vrbo, or your market dashboard workflow. The dashboard can now generate Google search links for each comparable, and it will use a direct `listingUrl` if you add one to the JSON.</li>
             <li>Replace the sample JSON with those real observations in the dashboard editor.</li>
             <li>Rerun the audit and adjust the controls until the comp set reflects the exact micro-market you trust.</li>
           </ol>
+        </section>
+
+        <section class="panel appendix-card">
+          <div class="panel-head">
+            <p class="eyebrow">Automation</p>
+            <h2>What can be automated next</h2>
+          </div>
+          <ul class="insights-list">
+            <li>Discovery can be automated now by generating Google search links from listing name, source, and micro-market.</li>
+            <li>Accuracy improves if you save the canonical OTA page into each comparable as `listingUrl` and reuse it in future refreshes.</li>
+            <li>The next practical automation step is browser automation that opens those known listing pages and captures visible prices and availability into JSON.</li>
+            <li>Google result scraping itself is fragile, so the safer workflow is: search once, save the listing URL, then automate from that stable source.</li>
+          </ul>
         </section>
       </section>
     </main>

@@ -15,6 +15,25 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function normalizeUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return url.toString();
+    }
+  } catch (_) {
+    return "";
+  }
+  return "";
+}
+
+function buildGoogleSearchUrl(parts) {
+  const query = parts.filter(Boolean).join(" ").trim();
+  if (!query) return "";
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+
 const els = {
   statusTitle: document.getElementById("status-title"),
   statusHeadline: document.getElementById("status-headline"),
@@ -95,7 +114,7 @@ function renderSubject() {
   els.subjectCard.innerHTML = `
     <p class="eyebrow">Current Subject</p>
     <h3>${subject.name}</h3>
-    <p>${subject.bedrooms}BR · sleeps ${subject.maxGuests} · ${subject.hasPool ? "pool" : "no pool"} · ${subject.walkMinutesToBeach} min walk</p>
+    <p>${subject.bedrooms}BR &middot; sleeps ${subject.maxGuests} &middot; ${subject.hasPool ? "pool" : "no pool"} &middot; ${subject.walkMinutesToBeach} min walk</p>
     <p>${state.dataset.meta.microMarket}</p>
     <ul class="insights-list">${notes}</ul>
   `;
@@ -143,19 +162,43 @@ function renderInsights() {
   els.insightsList.innerHTML = asArray(state.analysis.insights).map((item) => `<li>${item}</li>`).join("");
 }
 
+function getComparableRecord(compId) {
+  return asArray(state.dataset?.comparables).find((comp) => comp.id === compId) || null;
+}
+
+function getComparableLinks(comp) {
+  const record = getComparableRecord(comp.id);
+  const directUrl = normalizeUrl(record?.listingUrl || record?.sourceUrl || record?.url || "");
+  const microMarket = state.dataset?.meta?.microMarket || state.dataset?.subjectListing?.market || "";
+  const googleSearchUrl = buildGoogleSearchUrl([comp.name, comp.source, microMarket]);
+  return { directUrl, googleSearchUrl };
+}
+
 function renderComparables() {
-  els.comparablesBody.innerHTML = asArray(state.analysis.comparableSummary).map((comp) => `
-    <tr>
-      <td>
-        <strong>${comp.name}</strong><br>
-        <span class="subtle">${comp.source} · ${comp.bedrooms}BR · sleeps ${comp.maxGuests}</span>
-      </td>
-      <td>${comp.similarity.toFixed(1)}%</td>
-      <td>${formatCurrency(comp.medianAdr)}</td>
-      <td>${formatPercent(comp.occupancyProxy)}</td>
-      <td>${comp.walkMinutesToBeach} min</td>
-    </tr>
-  `).join("");
+  els.comparablesBody.innerHTML = asArray(state.analysis.comparableSummary).map((comp) => {
+    const links = getComparableLinks(comp);
+    const linkItems = [];
+    if (links.directUrl) {
+      linkItems.push(`<a class="text-link" href="${links.directUrl}" target="_blank" rel="noreferrer">Open listing</a>`);
+    }
+    if (links.googleSearchUrl) {
+      linkItems.push(`<a class="text-link" href="${links.googleSearchUrl}" target="_blank" rel="noreferrer">Google search</a>`);
+    }
+
+    return `
+      <tr>
+        <td>
+          <strong>${comp.name}</strong><br>
+          <span class="subtle">${comp.source} &middot; ${comp.bedrooms}BR &middot; sleeps ${comp.maxGuests}</span>
+          <div class="inline-links">${linkItems.join('<span class="link-divider">|</span>')}</div>
+        </td>
+        <td>${comp.similarity.toFixed(1)}%</td>
+        <td>${formatCurrency(comp.medianAdr)}</td>
+        <td>${formatPercent(comp.occupancyProxy)}</td>
+        <td>${comp.walkMinutesToBeach} min</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderDailyTable() {

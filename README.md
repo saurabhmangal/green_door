@@ -10,6 +10,7 @@ A small local frontend/backend app for testing whether `PriceLabs` recommendatio
 - Highlights dates that look `underpriced`, `overpriced`, or `within market band`.
 - Scrapes public `PriceLabs` pages so the UI can show what their website says about pricing inputs and controls.
 - Lets you paste your own JSON dataset and rerun the audit without changing code.
+- Generates Google search links for comparable listings, and uses a direct `listingUrl` when you include one in the dataset.
 
 ## Run it
 

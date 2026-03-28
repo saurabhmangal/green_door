@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PriceLabs Audit</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Micro-Market Pricing Audit</p>
+        <h1>Is PriceLabs pricing this listing correctly?</h1>
+        <p class="lede">
+          This dashboard audits PriceLabs recommendations against a weighted comparable set. It was shaped from the shared Zalor Beach conversation and tuned for the kind of "is this underpriced?" question you asked.
+        </p>
+        <div class="hero-links">
+          <a class="chip-link" href="https://chatgpt.com/share/69c77a7a-6970-8320-b81b-bb10f728dce4" target="_blank" rel="noreferrer">Shared conversation</a>
+          <button id="refresh-sources" class="ghost-button" type="button">Refresh PriceLabs public sources</button>
+        </div>
+      </div>
+      <div class="hero-badge">
+        <p class="badge-label">Audit Status</p>
+        <h2 id="status-title">Loading</h2>
+        <p id="status-headline">Preparing the comparison engine.</p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="controls panel">
+        <div class="panel-head">
+          <p class="eyebrow">Audit Controls</p>
+          <h2>Match rules</h2>
+        </div>
+
+        <label class="control">
+          <span>Horizon</span>
+          <input id="horizonDays" type="range" min="7" max="30" step="1">
+          <strong id="horizonDaysValue"></strong>
+        </label>
+
+        <label class="control">
+          <span>Minimum rating</span>
+          <input id="minimumRating" type="range" min="4" max="5" step="0.05">
+          <strong id="minimumRatingValue"></strong>
+        </label>
+
+        <label class="control">
+          <span>Max walk to beach</span>
+          <input id="maxWalkMinutes" type="range" min="5" max="30" step="1">
+          <strong id="maxWalkMinutesValue"></strong>
+        </label>
+
+        <label class="control">
+          <span>Minimum similarity</span>
+          <input id="minSimilarity" type="range" min="0.3" max="0.95" step="0.01">
+          <strong id="minSimilarityValue"></strong>
+        </label>
+
+        <label class="toggle">
+          <input id="strictPoolMatch" type="checkbox">
+          <span>Only compare pool-to-pool matches</span>
+        </label>
+
+        <button id="run-analysis" class="primary-button" type="button">Run Audit</button>
+
+        <div class="subject-card" id="subject-card"></div>
+      </aside>
+
+      <section class="content">
+        <section class="summary-grid" id="summary-grid"></section>
+
+        <section class="panel chart-panel">
+          <div class="panel-head">
+            <p class="eyebrow">Forward View</p>
+            <h2>PriceLabs vs weighted market range</h2>
+          </div>
+          <div id="chart-host" class="chart-host"></div>
+          <div class="legend">
+            <span><i class="legend-band"></i>Market band</span>
+            <span><i class="legend-market"></i>Weighted market median</span>
+            <span><i class="legend-pricelabs"></i>PriceLabs recommendation</span>
+          </div>
+        </section>
+
+        <section class="dual-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <p class="eyebrow">Audit Notes</p>
+              <h2>Key insights</h2>
+            </div>
+            <ul id="insights-list" class="insights-list"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <p class="eyebrow">Comparable Set</p>
+              <h2>Best matches</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Listing</th>
+                    <th>Similarity</th>
+                    <th>Median ADR</th>
+                    <th>Occ.</th>
+                    <th>Walk</th>
+                  </tr>
+                </thead>
+                <tbody id="comparables-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">Day By Day</p>
+            <h2>Recommendation audit table</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>PriceLabs</th>
+                  <th>Market median</th>
+                  <th>Band</th>
+                  <th>Gap</th>
+                  <th>Action</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody id="daily-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">Dataset Editor</p>
+            <h2>Paste your own sample, export, or manual capture</h2>
+          </div>
+          <p class="panel-copy">
+            The app accepts one JSON payload with the subject listing, PriceLabs daily prices, and comparable daily rates. Load the built-in Zalor sample or replace it with your own dataset and rerun the audit.
+          </p>
+          <div class="editor-actions">
+            <button id="load-sample" class="ghost-button" type="button">Reload sample dataset</button>
+            <button id="apply-dataset" class="primary-button" type="button">Analyze pasted dataset</button>
+          </div>
+          <textarea id="dataset-editor" spellcheck="false"></textarea>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">Public PriceLabs Context</p>
+            <h2>What the official site says</h2>
+          </div>
+          <p class="panel-copy">
+            These snippets are scraped from public PriceLabs pages so we can compare the marketing claims with what the market data says.
+          </p>
+          <div id="sources-list" class="sources-list"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <template id="metric-card-template">
+    <article class="metric-card">
+      <p class="metric-label"></p>
+      <h3 class="metric-value"></h3>
+      <p class="metric-footnote"></p>
+    </article>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>

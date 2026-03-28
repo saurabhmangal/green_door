@@ -1,0 +1,201 @@
+{
+  "meta": {
+    "currency": "INR",
+    "microMarket": "Zalor Beach, South Goa",
+    "sourceContext": "Built from the shared ChatGPT thread about validating PriceLabs in a Zalor Beach micro-market.",
+    "sampleType": "Synthetic sample calibrated to the shared conversation, not live OTA exports.",
+    "sharedConversation": "https://chatgpt.com/share/69c77a7a-6970-8320-b81b-bb10f728dce4"
+  },
+  "subjectListing": {
+    "name": "The Greendoor Villa",
+    "bedrooms": 3,
+    "maxGuests": 8,
+    "hasPool": true,
+    "walkMinutesToBeach": 8,
+    "rating": 4.85,
+    "market": "Zalor Beach, South Goa",
+    "notes": [
+      "Shared thread objective: understand if PriceLabs is underpricing a tight beach micro-market.",
+      "This sample assumes a premium 3BR villa with pool access and short walking distance to the beach."
+    ]
+  },
+  "auditAssumptions": [
+    "PriceLabs rates in this sample represent recommended nightly prices for the next 14 nights.",
+    "Comparable listing rates are synthetic stand-ins for visible OTA calendar prices.",
+    "Use your own exported PriceLabs recommendations and observed competitor calendars before acting on revenue decisions."
+  ],
+  "pricelabsRates": [
+    { "date": "2026-04-01", "price": 7200, "minStay": 2 },
+    { "date": "2026-04-02", "price": 7300, "minStay": 2 },
+    { "date": "2026-04-03", "price": 8200, "minStay": 2 },
+    { "date": "2026-04-04", "price": 8500, "minStay": 2 },
+    { "date": "2026-04-05", "price": 8000, "minStay": 2 },
+    { "date": "2026-04-06", "price": 6900, "minStay": 2 },
+    { "date": "2026-04-07", "price": 7000, "minStay": 2 },
+    { "date": "2026-04-08", "price": 7100, "minStay": 2 },
+    { "date": "2026-04-09", "price": 7300, "minStay": 2 },
+    { "date": "2026-04-10", "price": 8400, "minStay": 2 },
+    { "date": "2026-04-11", "price": 8800, "minStay": 2 },
+    { "date": "2026-04-12", "price": 8100, "minStay": 2 },
+    { "date": "2026-04-13", "price": 7050, "minStay": 2 },
+    { "date": "2026-04-14", "price": 7150, "minStay": 2 }
+  ],
+  "comparables": [
+    {
+      "id": "comp-01",
+      "name": "Palm Shore 3BR Villa",
+      "source": "Airbnb",
+      "bedrooms": 3,
+      "maxGuests": 8,
+      "hasPool": true,
+      "walkMinutesToBeach": 7,
+      "rating": 4.84,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 9100, "available": true },
+        { "date": "2026-04-02", "price": 9300, "available": true },
+        { "date": "2026-04-03", "price": 10900, "available": false },
+        { "date": "2026-04-04", "price": 11500, "available": false },
+        { "date": "2026-04-05", "price": 10300, "available": false },
+        { "date": "2026-04-06", "price": 8700, "available": true },
+        { "date": "2026-04-07", "price": 8800, "available": true },
+        { "date": "2026-04-08", "price": 9050, "available": true },
+        { "date": "2026-04-09", "price": 9250, "available": true },
+        { "date": "2026-04-10", "price": 11400, "available": false },
+        { "date": "2026-04-11", "price": 12000, "available": false },
+        { "date": "2026-04-12", "price": 10600, "available": false },
+        { "date": "2026-04-13", "price": 8900, "available": true },
+        { "date": "2026-04-14", "price": 9000, "available": true }
+      ]
+    },
+    {
+      "id": "comp-02",
+      "name": "Casa Azul Pool Retreat",
+      "source": "Vrbo",
+      "bedrooms": 3,
+      "maxGuests": 8,
+      "hasPool": true,
+      "walkMinutesToBeach": 9,
+      "rating": 4.9,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 9600, "available": false },
+        { "date": "2026-04-02", "price": 9800, "available": false },
+        { "date": "2026-04-03", "price": 11400, "available": false },
+        { "date": "2026-04-04", "price": 12100, "available": false },
+        { "date": "2026-04-05", "price": 10800, "available": false },
+        { "date": "2026-04-06", "price": 9000, "available": true },
+        { "date": "2026-04-07", "price": 9200, "available": true },
+        { "date": "2026-04-08", "price": 9350, "available": true },
+        { "date": "2026-04-09", "price": 9550, "available": false },
+        { "date": "2026-04-10", "price": 11900, "available": false },
+        { "date": "2026-04-11", "price": 12600, "available": false },
+        { "date": "2026-04-12", "price": 11100, "available": false },
+        { "date": "2026-04-13", "price": 9200, "available": true },
+        { "date": "2026-04-14", "price": 9300, "available": true }
+      ]
+    },
+    {
+      "id": "comp-03",
+      "name": "Sea Salt Courtyard",
+      "source": "Airbnb",
+      "bedrooms": 4,
+      "maxGuests": 10,
+      "hasPool": true,
+      "walkMinutesToBeach": 5,
+      "rating": 4.86,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 10400, "available": true },
+        { "date": "2026-04-02", "price": 10600, "available": true },
+        { "date": "2026-04-03", "price": 12500, "available": false },
+        { "date": "2026-04-04", "price": 13200, "available": false },
+        { "date": "2026-04-05", "price": 11800, "available": true },
+        { "date": "2026-04-06", "price": 9900, "available": true },
+        { "date": "2026-04-07", "price": 10100, "available": true },
+        { "date": "2026-04-08", "price": 10300, "available": true },
+        { "date": "2026-04-09", "price": 10500, "available": true },
+        { "date": "2026-04-10", "price": 12900, "available": false },
+        { "date": "2026-04-11", "price": 13600, "available": false },
+        { "date": "2026-04-12", "price": 12100, "available": true },
+        { "date": "2026-04-13", "price": 10200, "available": true },
+        { "date": "2026-04-14", "price": 10300, "available": true }
+      ]
+    },
+    {
+      "id": "comp-04",
+      "name": "Banyan Breeze House",
+      "source": "Airbnb",
+      "bedrooms": 3,
+      "maxGuests": 7,
+      "hasPool": false,
+      "walkMinutesToBeach": 12,
+      "rating": 4.78,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 7900, "available": true },
+        { "date": "2026-04-02", "price": 8100, "available": true },
+        { "date": "2026-04-03", "price": 9500, "available": true },
+        { "date": "2026-04-04", "price": 10000, "available": false },
+        { "date": "2026-04-05", "price": 9100, "available": true },
+        { "date": "2026-04-06", "price": 7600, "available": true },
+        { "date": "2026-04-07", "price": 7700, "available": true },
+        { "date": "2026-04-08", "price": 7850, "available": true },
+        { "date": "2026-04-09", "price": 8050, "available": true },
+        { "date": "2026-04-10", "price": 9800, "available": true },
+        { "date": "2026-04-11", "price": 10400, "available": false },
+        { "date": "2026-04-12", "price": 9300, "available": true },
+        { "date": "2026-04-13", "price": 7800, "available": true },
+        { "date": "2026-04-14", "price": 7900, "available": true }
+      ]
+    },
+    {
+      "id": "comp-05",
+      "name": "Coconut Canopy Villa",
+      "source": "Vrbo",
+      "bedrooms": 2,
+      "maxGuests": 6,
+      "hasPool": true,
+      "walkMinutesToBeach": 11,
+      "rating": 4.81,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 8300, "available": true },
+        { "date": "2026-04-02", "price": 8500, "available": true },
+        { "date": "2026-04-03", "price": 9900, "available": false },
+        { "date": "2026-04-04", "price": 10400, "available": false },
+        { "date": "2026-04-05", "price": 9500, "available": true },
+        { "date": "2026-04-06", "price": 8000, "available": true },
+        { "date": "2026-04-07", "price": 8100, "available": true },
+        { "date": "2026-04-08", "price": 8300, "available": true },
+        { "date": "2026-04-09", "price": 8500, "available": true },
+        { "date": "2026-04-10", "price": 10100, "available": false },
+        { "date": "2026-04-11", "price": 10700, "available": true },
+        { "date": "2026-04-12", "price": 9600, "available": true },
+        { "date": "2026-04-13", "price": 8150, "available": true },
+        { "date": "2026-04-14", "price": 8250, "available": true }
+      ]
+    },
+    {
+      "id": "comp-06",
+      "name": "White Sand Residences",
+      "source": "Airbnb",
+      "bedrooms": 3,
+      "maxGuests": 8,
+      "hasPool": true,
+      "walkMinutesToBeach": 6,
+      "rating": 4.93,
+      "dailyRates": [
+        { "date": "2026-04-01", "price": 9800, "available": false },
+        { "date": "2026-04-02", "price": 10000, "available": false },
+        { "date": "2026-04-03", "price": 11800, "available": false },
+        { "date": "2026-04-04", "price": 12400, "available": false },
+        { "date": "2026-04-05", "price": 11100, "available": true },
+        { "date": "2026-04-06", "price": 9300, "available": true },
+        { "date": "2026-04-07", "price": 9400, "available": true },
+        { "date": "2026-04-08", "price": 9600, "available": true },
+        { "date": "2026-04-09", "price": 9800, "available": true },
+        { "date": "2026-04-10", "price": 12100, "available": false },
+        { "date": "2026-04-11", "price": 12800, "available": false },
+        { "date": "2026-04-12", "price": 11300, "available": false },
+        { "date": "2026-04-13", "price": 9500, "available": true },
+        { "date": "2026-04-14", "price": 9600, "available": true }
+      ]
+    }
+  ]
+}

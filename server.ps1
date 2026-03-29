@@ -119,6 +119,211 @@ function Write-JsonFile {
     Set-Content -Path $Path -Value $json -Encoding UTF8
 }
 
+function Find-BalancedJsonBlock {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)][int]$StartIndex
+    )
+
+    $depth = 0
+    $inString = $false
+    $escape = $false
+    for ($i = $StartIndex; $i -lt $Text.Length; $i++) {
+        $ch = $Text[$i]
+        if ($inString) {
+            if ($escape) {
+                $escape = $false
+            } elseif ($ch -eq '\\') {
+                $escape = $true
+            } elseif ($ch -eq '"') {
+                $inString = $false
+            }
+        } else {
+            if ($ch -eq '"') {
+                $inString = $true
+            } elseif ($ch -eq '{') {
+                $depth++
+            } elseif ($ch -eq '}') {
+                $depth--
+                if ($depth -eq 0) {
+                    return $Text.Substring($StartIndex, $i - $StartIndex + 1)
+                }
+            }
+        }
+    }
+    return $null
+}
+
+function Get-JsonAssignmentFromHtml {
+    param(
+        [Parameter(Mandatory = $true)][string]$Html,
+        [Parameter(Mandatory = $true)][string]$AssignmentKey
+    )
+
+    $pattern = [regex]::Escape($AssignmentKey) + '\s*=\s*\{'
+    $match = [regex]::Match($Html, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if (-not $match.Success) { return $null }
+
+    $start = $Html.IndexOf('{', $match.Index)
+    if ($start -lt 0) { return $null }
+
+    $jsonText = Find-BalancedJsonBlock -Text $Html -StartIndex $start
+    if (-not $jsonText) { return $null }
+
+    try {
+        return $jsonText | ConvertFrom-Json
+    } catch {
+        return $null
+    }
+}
+
+function Get-JsonLdFromHtml {
+    param([Parameter(Mandatory = $true)][string]$Html)
+
+    $pattern = '<script[^>]+type=["'']application/ld\+json["''][^>]*>(.*?)</script>'
+    $match = [regex]::Match($Html, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::Singleline)
+    if (-not $match.Success) { return $null }
+
+    $payload = $match.Groups[1].Value.Trim()
+    if ([string]::IsNullOrWhiteSpace($payload)) { return $null }
+
+    try {
+        return $payload | ConvertFrom-Json
+    } catch {
+        return $null
+    }
+}
+
+function Get-ValueByPossibleKeys {
+    param(
+        [Parameter(Mandatory = $true)][object]$Data,
+        [Parameter(Mandatory = $true)][string[]]$Keys
+    )
+
+    if ($null -eq $Data) { return $null }
+
+    if ($Data -is [System.Collections.IDictionary]) {
+        foreach ($key in $Keys) {
+            if ($Data.Contains($key)) { return $Data[$key] }
+        }
+    } elseif ($Data -is [pscustomobject]) {
+        $propNames = $Data.PSObject.Properties.Name
+        foreach ($key in $Keys) {
+            if ($propNames -contains $key) { return $Data.$key }
+        }
+    } elseif ($Data -is [System.Collections.IEnumerable] -and -not ($Data -is [string])) {
+        foreach ($item in $Data) {
+            $found = Get-ValueByPossibleKeys -Data $item -Keys $Keys
+            if ($null -ne $found) { return $found }
+        }
+    }
+
+    return $null
+}
+
+function Get-ArrayItems {
+    param([object]$Data)
+    if ($null -eq $Data) { return @() }
+    if ($Data -is [System.Collections.IEnumerable] -and -not ($Data -is [string])) {
+        return @($Data)
+    }
+    return @($Data)
+}
+
+function Has-PoolAmenity {
+    param([Parameter(Mandatory = $true)][object]$Data)
+
+    $amenities = Get-ValueByPossibleKeys -Data $Data -Keys @("amenities","listing_amenities","amenity_names","amenities_names")
+    if ($null -eq $amenities) { return $false }
+
+    foreach ($item in Get-ArrayItems -Data $amenities) {
+        if ($item -and $item.ToString().ToLower().Contains("pool")) { return $true }
+    }
+
+    return $false
+}
+
+function Extract-AirbnbListingMetadata {
+    param(
+        [Parameter(Mandatory = $true)][string]$Html,
+        [Parameter(Mandatory = $true)][string]$Url
+    )
+
+    $metadata = [pscustomobject]@{
+        listingUrl = $Url
+        source = "Airbnb"
+        id = $null
+        name = $null
+        bedrooms = $null
+        maxGuests = $null
+        hasPool = $false
+        rating = $null
+        reviewCount = $null
+        description = $null
+    }
+
+    $jsonLd = Get-JsonLdFromHtml -Html $Html
+    if ($jsonLd -ne $null) {
+        if (($jsonLd -is [System.Collections.IEnumerable]) -and -not ($jsonLd -is [string])) {
+            $jsonLd = $jsonLd | Select-Object -First 1
+        }
+
+        if ($jsonLd -is [pscustomobject]) {
+            if (-not $metadata.name) { $metadata.name = [string]$jsonLd.name }
+            if (-not $metadata.description) { $metadata.description = [string]$jsonLd.description }
+            $agg = Get-ValueByPossibleKeys -Data $jsonLd -Keys @("aggregateRating","aggregate_rating")
+            if ($agg -ne $null) {
+                if (-not $metadata.rating) { $metadata.rating = [double](Get-ValueByPossibleKeys -Data $agg -Keys @("ratingValue","rating_value")) }
+                if (-not $metadata.reviewCount) { $metadata.reviewCount = [int](Get-ValueByPossibleKeys -Data $agg -Keys @("reviewCount","review_count")) }
+            }
+        }
+    }
+
+    $pageJson = Get-JsonAssignmentFromHtml -Html $Html -AssignmentKey "window.__INITIAL_STATE__"
+    if (-not $pageJson) { $pageJson = Get-JsonAssignmentFromHtml -Html $Html -AssignmentKey "__INITIAL_STATE__" }
+
+    if ($pageJson -ne $null) {
+        if (-not $metadata.id) { $metadata.id = Get-ValueByPossibleKeys -Data $pageJson -Keys @("listing_id","listingId","id") }
+        if (-not $metadata.name) { $metadata.name = Get-ValueByPossibleKeys -Data $pageJson -Keys @("name","title") }
+        if (-not $metadata.description) { $metadata.description = Get-ValueByPossibleKeys -Data $pageJson -Keys @("description","summary") }
+        if (-not $metadata.bedrooms) { $metadata.bedrooms = Get-ValueByPossibleKeys -Data $pageJson -Keys @("bedrooms","bedroom_count","bedroomCount") }
+        if (-not $metadata.maxGuests) { $metadata.maxGuests = Get-ValueByPossibleKeys -Data $pageJson -Keys @("person_capacity","personCapacity","guests_included","max_guests","maxGuests") }
+        if (-not $metadata.rating) { $metadata.rating = Get-ValueByPossibleKeys -Data $pageJson -Keys @("rating","star_rating","avg_rating") }
+        if (-not $metadata.hasPool) { $metadata.hasPool = Has-PoolAmenity -Data $pageJson }
+    }
+
+    if (-not $metadata.id) {
+        $match = [regex]::Match($Url, '/rooms/(?<id>\d+)')
+        if ($match.Success) { $metadata.id = $match.Groups['id'].Value }
+    }
+
+    if ([string]::IsNullOrWhiteSpace([string]$metadata.name)) {
+        $metadata.name = "Airbnb listing"
+    }
+
+    if ($metadata.bedrooms -ne $null) { $metadata.bedrooms = [int](Get-Number $metadata.bedrooms 0) }
+    if ($metadata.maxGuests -ne $null) { $metadata.maxGuests = [int](Get-Number $metadata.maxGuests 0) }
+    if ($metadata.rating -ne $null) { $metadata.rating = [double](Get-Number $metadata.rating 0) }
+    if ($metadata.reviewCount -ne $null) { $metadata.reviewCount = [int](Get-Number $metadata.reviewCount 0) }
+
+    return $metadata
+}
+
+function Scrape-AirbnbListing {
+    param([Parameter(Mandatory = $true)][string]$Url)
+
+    $headers = @{ 
+        "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "Accept-Language" = "en-US,en;q=0.9"
+        "Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    }
+
+    $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 30 -Headers $headers
+    if ($null -eq $response.Content) { throw "No content returned from $Url" }
+
+    return Extract-AirbnbListingMetadata -Html $response.Content -Url $Url
+}
+
 function Get-DefaultOptions {
     return [pscustomobject]@{
         horizonDays     = 14
@@ -681,6 +886,22 @@ function Handle-ApiRequest {
             Send-Json -Response $response -Payload $analysis
             return
         }
+        "POST /api/scrape-listing" {
+            $body = Read-RequestBody -Request $request
+            if ($null -eq $body -or [string]::IsNullOrWhiteSpace([string]$body.url)) {
+                Send-Error -Response $response -Message "Request body must include a listing URL."
+                return
+            }
+
+            try {
+                $listing = Scrape-AirbnbListing -Url [string]$body.url
+                Send-Json -Response $response -Payload ([pscustomobject]@{ listing = $listing })
+            } catch {
+                Send-Error -Response $response -Message $_.Exception.Message
+            }
+            return
+        }
+
         "POST /api/refresh-sources" {
             $sources = Get-PriceLabsPublicIntel -ForceRefresh
             Send-Json -Response $response -Payload $sources

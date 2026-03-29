@@ -59,6 +59,7 @@ const els = {
   runAnalysis: document.getElementById("run-analysis"),
   applyDataset: document.getElementById("apply-dataset"),
   loadSample: document.getElementById("load-sample"),
+  scrapeListing: document.getElementById("scrape-listing"),
 };
 
 function formatCurrency(value) {
@@ -111,11 +112,17 @@ function applyOptionsToControls(options) {
 function renderSubject() {
   const subject = state.dataset.subjectListing;
   const notes = (subject.notes || []).map((note) => `<li>${note}</li>`).join("");
+  const subjectLink = normalizeUrl(subject.listingUrl || subject.sourceUrl || subject.url || "");
+  const linkMarkup = subjectLink
+    ? `<p><a class="text-link" href="${subjectLink}" target="_blank" rel="noreferrer">Open subject Airbnb listing</a></p>`
+    : "";
+
   els.subjectCard.innerHTML = `
     <p class="eyebrow">Current Subject</p>
     <h3>${subject.name}</h3>
     <p>${subject.bedrooms}BR &middot; sleeps ${subject.maxGuests} &middot; ${subject.hasPool ? "pool" : "no pool"} &middot; ${subject.walkMinutesToBeach} min walk</p>
     <p>${state.dataset.meta.microMarket}</p>
+    ${linkMarkup}
     <ul class="insights-list">${notes}</ul>
   `;
 }
@@ -379,6 +386,42 @@ function wireControls() {
       await runAudit(state.dataset);
     } catch (error) {
       window.alert(error.message);
+    }
+  });
+
+  els.scrapeListing.addEventListener("click", async () => {
+    const url = window.prompt("Paste a public listing URL to scrape:");
+    if (!url || !url.trim()) { return; }
+
+    els.scrapeListing.disabled = true;
+    els.scrapeListing.textContent = "Scraping...";
+    try {
+      const payload = await requestJson("/api/scrape-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+
+      const scraped = payload.listing || payload;
+      state.dataset = state.dataset || {};
+      state.dataset.subjectListing = {
+        ...state.dataset.subjectListing,
+        ...scraped,
+        market: state.dataset.subjectListing?.market || state.dataset.meta?.microMarket || "",
+        notes: state.dataset.subjectListing?.notes || [],
+      };
+      renderDatasetEditor();
+
+      try {
+        await runAudit(state.dataset);
+      } catch (error) {
+        window.alert(`Scraped listing metadata, but audit failed: ${error.message}`);
+      }
+    } catch (error) {
+      window.alert(`Could not scrape listing: ${error.message}`);
+    } finally {
+      els.scrapeListing.disabled = false;
+      els.scrapeListing.textContent = "Scrape listing metadata";
     }
   });
 
